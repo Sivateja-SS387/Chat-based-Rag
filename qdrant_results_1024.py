@@ -23,7 +23,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Configuration
-COLLECTION_NAME = "drug_labels_collection_data_final"
+COLLECTION_NAME = "Drug_Data_Collection"
 TOP_K = 5  # Number of results to retrieve
 SAMBANOVA_API_URL = "https://api.sambanova.ai/v1/chat/completions"
 SAMBANOVA_API_KEY = "3a32e1a5-667a-4929-a146-fdabc9b7abb9"
