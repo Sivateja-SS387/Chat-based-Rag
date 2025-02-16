@@ -110,9 +110,9 @@ def query_sambanova(prompt: str) -> str:
         traceback.print_exc()
         return ""
 
-def rag_pipeline(query: str) -> Dict[str, Any]:
+def rag_pipeline(query: str, history: list) -> Dict[str, Any]:
     try:
-        # Step 1: Get query embedding
+        # Step 1: Get query embedding (without history)
         query_embedding = get_query_embedding(query)
 
         # Step 2: Retrieve results from Qdrant
@@ -124,17 +124,23 @@ def rag_pipeline(query: str) -> Dict[str, Any]:
                 "retrieved_docs": []
             }
 
-        # Step 3: Prepare context for Sambanova
-        # context = " ".join([doc["payload"].get("description", "") for doc in retrieved_docs])
-        # Step 3: Prepare context for Sambanova
+        # Step 3: Prepare context for SambaNova
         context = " ".join([str(doc["payload"]) for doc in retrieved_docs])
 
-        print(context)
-        # Step 4: Generate a structured prompt for Sambanova
-        # final_prompt = f"Based on the following context only, provide a detailed response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse: if for the query the contect dont have match dnt dorrelat and dnt get from any sources" 
-        final_prompt = f"Based on the following context only, provide a detailed Structured response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse:  Do not use any external sources or assumptions beyond the provided context.and in output dnt mention these are details i can answer. " 
+        # Step 4: Prepare session history (not used for embeddings)
+        history_context = " ".join([f"{msg['sender']}: {msg['text']}" for msg in history])
 
-        # Step 5: Get response from Sambanova
+        # Step 5: Generate a structured prompt for Sambanova
+        final_prompt = (
+            f"Based on the following context and chat history, provide a detailed structured response to the query.\n\n"
+            f"Chat History: {history_context}\n\n"
+            f"Context: {context}\n"
+            f"Query: {query}\n\n"
+            "Response: Do not use any external sources or assumptions beyond the provided context. "
+            "Do not mention 'these are details I can answer'."
+        )
+
+        # Step 6: Get response from Sambanova
         structured_response = query_sambanova(final_prompt)
 
         return {
@@ -149,7 +155,6 @@ def rag_pipeline(query: str) -> Dict[str, Any]:
 
 # Streamlit UI
 st.title("💊 Pharmacy Chat Assistant")
-# st.write("Ask questions about drug data. The assistant responds based on the database.")
 
 # Initialize session state for chat history
 if "messages" not in st.session_state:
@@ -169,15 +174,8 @@ if user_input := st.chat_input("Type your message here..."):
     with st.chat_message("user"):
         st.markdown(user_input)
 
-    # Retrieve context dynamically from user input
-    retrieved_context = rag_pipeline(user_input)
-    # Prepare the prompt for SambaNova
-    # final_prompt = f"Answer the following based on context:\nContext: {retrieved_context['response']}\nQuestion: {user_input}"
-
-    # print(final_prompt)
-    # Get response from SambaNova
-    # response = query_sambanova(final_prompt)
-    print(retrieved_context['response'])
+    # Retrieve context dynamically from user input and history (only history added to the prompt)
+    retrieved_context = rag_pipeline(user_input, st.session_state.messages)
 
     # Add bot response to chat history
     st.session_state.messages.append({"sender": "bot", "text": retrieved_context['response']})
@@ -185,3 +183,80 @@ if user_input := st.chat_input("Type your message here..."):
     # Display bot response
     with st.chat_message("bot"):
         st.markdown(retrieved_context['response'])
+
+
+# def rag_pipeline(query: str) -> Dict[str, Any]:
+#     try:
+#         # Step 1: Get query embedding
+#         query_embedding = get_query_embedding(query)
+
+#         # Step 2: Retrieve results from Qdrant
+#         retrieved_docs = retrieve_from_qdrant(query_embedding)
+#         if not retrieved_docs:
+#             return {
+#                 "query": query,
+#                 "response": "No relevant information found.",
+#                 "retrieved_docs": []
+#             }
+
+#         # Step 3: Prepare context for Sambanova
+#         # context = " ".join([doc["payload"].get("description", "") for doc in retrieved_docs])
+#         # Step 3: Prepare context for Sambanova
+#         context = " ".join([str(doc["payload"]) for doc in retrieved_docs])
+
+#         print(context)
+#         # Step 4: Generate a structured prompt for Sambanova
+#         # final_prompt = f"Based on the following context only, provide a detailed response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse: if for the query the contect dont have match dnt dorrelat and dnt get from any sources" 
+#         final_prompt = f"Based on the following context only, provide a detailed Structured response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse:  Do not use any external sources or assumptions beyond the provided context.and in output dnt mention these are details i can answer. " 
+
+#         # Step 5: Get response from Sambanova
+#         structured_response = query_sambanova(final_prompt)
+
+#         return {
+#             "query": query,
+#             "response": structured_response,
+#             "retrieved_docs": retrieved_docs
+#         }
+#     except Exception as e:
+#         logger.error(f"Error in rag_pipeline: {e}")
+#         traceback.print_exc()
+#         return {"query": query, "response": "Error processing the query."}
+
+# # Streamlit UI
+# st.title("💊 Pharmacy Chat Assistant")
+# # st.write("Ask questions about drug data. The assistant responds based on the database.")
+
+# # Initialize session state for chat history
+# if "messages" not in st.session_state:
+#     st.session_state.messages = []
+
+# # Display chat history
+# for message in st.session_state.messages:
+#     with st.chat_message(message["sender"]):
+#         st.markdown(message["text"])
+
+# # Input for user messages
+# if user_input := st.chat_input("Type your message here..."):
+#     # Add user message to chat history
+#     st.session_state.messages.append({"sender": "user", "text": user_input})
+
+#     # Display user message
+#     with st.chat_message("user"):
+#         st.markdown(user_input)
+
+#     # Retrieve context dynamically from user input
+#     retrieved_context = rag_pipeline(user_input)
+#     # Prepare the prompt for SambaNova
+#     # final_prompt = f"Answer the following based on context:\nContext: {retrieved_context['response']}\nQuestion: {user_input}"
+
+#     # print(final_prompt)
+#     # Get response from SambaNova
+#     # response = query_sambanova(final_prompt)
+#     print(retrieved_context['response'])
+
+#     # Add bot response to chat history
+#     st.session_state.messages.append({"sender": "bot", "text": retrieved_context['response']})
+
+#     # Display bot response
+#     with st.chat_message("bot"):
+#         st.markdown(retrieved_context['response'])
