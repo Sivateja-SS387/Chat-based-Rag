@@ -1,0 +1,12 @@
+assemblyai
+numpy
+scipy
+streamlit
+sentence-transformers
+qdrant-client
+transformers
+langchain_huggingface
+requests
+psycopg2-binary
+langchain-community
+pydantic
