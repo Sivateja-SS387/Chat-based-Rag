@@ -132,7 +132,7 @@ def rag_pipeline(query: str) -> Dict[str, Any]:
         print(context)
         # Step 4: Generate a structured prompt for Sambanova
         # final_prompt = f"Based on the following context only, provide a detailed response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse: if for the query the contect dont have match dnt dorrelat and dnt get from any sources" 
-        final_prompt = f"Based on the following context only, provide a detailed framed response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse:  Do not use any external sources or assumptions beyond the provided context.and in output dnt mention these are details i can answer. " 
+        final_prompt = f"Based on the following context only, provide a detailed Structured response to the query.\n\nContext: {context}\nQuery: {query}\n\nResponse:  Do not use any external sources or assumptions beyond the provided context.and in output dnt mention these are details i can answer. " 
 
         # Step 5: Get response from Sambanova
         structured_response = query_sambanova(final_prompt)
